@@ -1,5 +1,8 @@
 import math
 import random
+import matplotlib.pyplot as plt
+from mplsoccer.pitch import Pitch
+import os
 """
 Each team must consist of a minimum of 3 players and a maximum of 5 players
 create a dictionary where each players team is assigned to them
@@ -49,18 +52,28 @@ print("red team:",red_team)
 class field(Players):
     """Define boundaries of the field"""
     def __init__(self):
-        self.baseline = 40
-        self.centretobaseline = (self.baseline)//2
+        self.diameter = 40
+        self.centretobaseline = (self.diameter)//2
         self.centretocorner = 23
         self.goalheight = 2
         self.goalwidth = 3
         self.distancefromgoaltocentre = 20
-
-        def goalscoring(self):
-            pass
+    """Define goal scoring riles of the field"""
+    def goalscoring(self):
+        pass
+    """Define possession for all 3 teams"""    
+    def possession(self):
+        pass
+    """Define rules for corners"""
+    def corners(self):
+        pass
+    """Define rules for throwins"""
+    def throwin(self):
+        pass
+           
 
 """Demarkate the field into red, green, blue zones"""
 """Teams start within their third of the pitch:
 Incorporate the triangle whose sides are measured from centre to corner as limits for player movement"""
-            
+ 
         
