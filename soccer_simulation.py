@@ -54,7 +54,7 @@ print("green team:",green_team)
 print("red team:",red_team)
 
 
-class field(Players):
+class field():
     """Define boundaries of the field"""
     def __init__(self):
         self.diameter = 40
@@ -63,37 +63,70 @@ class field(Players):
         self.numsides = 6
         self.goalheight = 2
         self.goalwidth = 3
-        self.centre = [0,0]
+        self.centre = (0,0)
 
     def hexagon(self):
+        """"This method returns the xy coordinates of the regular hexagon consisting of 6 equilateral triangles"""
         """"Compute all angles in radians because math.cos() and math.sin() return radians"""
         #convert 60 degrees to radians
         angle = (360 / self.numsides) * (math.pi / 180)
         #polygoncoordinates stores the cartesian coordinates of the hexagon
         polygoncoordinates = []
-        for i in range(0,self.sidelength):
-            x = polygoncoordinates[0] + self.sidelength * math.cos(angle*i)
-            y = polygoncoordinates[1] + self.sidelength * math.sin(angle*i)
+        #generate 6 pairs of vertices for the hexagon using the loop
+        for i in range(0,self.numsides):
+            x = round((self.sidelength * math.cos(angle*i)),2)
+            y = round((self.sidelength * math.sin(angle*i)),2)
             polygoncoordinates.append((x,y))
         return polygoncoordinates
     
-
-    def dividepitch(self):
+    """Return the each team's area coordinates which dictate centre kicks"""
+    def dividepitchpossession(self):
         coordinates = self.hexagon()
-        return {"red_team" : [self.centre, coordinates[0],coordinates[1],coordinates[2]],
-         "blue_team" : [self.centre, coordinates[3],coordinates[4],coordinates[5]],
-         "green_team" : [self.centre, coordinates[7],coordinates[8],coordinates[9]]}
+        return {"red_team_area" : [self.centre, coordinates[1],coordinates[0],coordinates[5]],
+         "blue_team_area" : [self.centre, coordinates[5],coordinates[4],coordinates[3]],
+         "green_team_area" : [self.centre, coordinates[3],coordinates[4],coordinates[1]]}
         #plt.hexbin()
-        #[[-11.5,-20],[-11.5,20],[11.5,-20],[11.5,20],[23,0],]
+        #[[-11.5,-20],[-11.5,20],[11.5,-20],[11.5,20],[23,0]]
 
-    """Return the rectangle that is the goal"""
-    def goal(self):
-        goalarea = self.goalheight * self.goalwidth 
-        return goalarea
+    """Return the boundary coordinates which dictate throw in's"""
+    def dividepitchboundaries(self):
+        coordinates = self.hexagon()
+        return {"red_team_boundary" : [coordinates[2],coordinates[3],coordinates[5],coordinates[0]],
+         "blue_team_boundary" : [coordinates[5],coordinates[4],coordinates[2],coordinates[1]],
+         "green_team_boundary" : [coordinates[3],coordinates[4],coordinates[1],coordinates[0]]}
     
-    def goalscoring(self):
-        pass
+
+    """Return the rectangular xy coordinates for each goal. Start by computing the starting point of each goal which is the midpoint of the boundary. Then add and subtract 1.5 and 2 to get the 4 rectangular coordinates of the goal"""
+    def drawgoalstart(self):
+        coordinates = self.hexagon()
+        redgoalxcoord = (coordinates[0][0] + coordinates[1][0])//2
+        redgoalycoord = (coordinates[0][1] + coordinates[1][1])//2
+        bluegoalxcoord = (coordinates[2][0] + coordinates[1][0])//2
+        bluegoalycoord = (coordinates[2][1] + coordinates[1][1])//2
+        greengoalxcoord = (coordinates[3][0] + coordinates[4][0])//2
+        greengoalycoord = (coordinates[3][1] + coordinates[4][1])//2
+        starting_pointcoords = [[redgoalxcoord,redgoalycoord],[bluegoalxcoord,bluegoalycoord],[greengoalxcoord,greengoalycoord]]
+        """Now obtain the 4 coordinates required to draw the rectangle of the red goal"""
+        left_red_goal_xycoord = [redgoalxcoord - 1.5, redgoalycoord]
+        right_red_goal_xycoord = [redgoalxcoord + 1.5, redgoalycoord]
+        top_left_red_goal_xycoord = [redgoalxcoord+1.5,redgoalycoord+2]
+        top_right_red_goal_xycoord = [redgoalxcoord-1.5,redgoalycoord+2]
+        """Now obtain the 4 coordinates required to draw the rectangle of the blue goal"""
+        left_blue_goal_xycoord = [bluegoalxcoord - 1.5, bluegoalycoord]
+        right_blue_goal_xycoord = [bluegoalxcoord + 1.5, bluegoalycoord]
+        top_left_blue_goal_xycoord = [bluegoalxcoord+1.5,bluegoalycoord+2]
+        top_right_blue_goal_xycoord = [bluegoalxcoord-1.5,bluegoalycoord+2]
+        """Now obtain the 4 coordinates required to draw the rectangle of the green goal"""
+        left_green_goal_xycoord = [greengoalxcoord - 1.5, greengoalycoord]
+        right_green_goal_xycoord = [greengoalxcoord + 1.5, greengoalycoord]
+        top_left_green_goal_xycoord = [greengoalxcoord+1.5,greengoalycoord+2]
+        top_right_green_goal_xycoord = [greengoalxcoord-1.5,greengoalycoord+2]
+        return {"red_team_goal_coords":[left_red_goal_xycoord,top_left_red_goal_xycoord,top_right_red_goal_xycoord,right_red_goal_xycoord],
+                "blue_team_goal_coords":[left_blue_goal_xycoord,top_left_blue_goal_xycoord,top_right_blue_goal_xycoord,right_blue_goal_xycoord],
+                "green_team_goal_coords":[left_green_goal_xycoord ,top_left_green_goal_xycoord,top_right_green_goal_xycoord,right_green_goal_xycoord]}
     
+
+
     """Define possession for all 3 teams"""    
     def possession(self):
         pass
@@ -104,6 +137,16 @@ class field(Players):
     def throwin(self):
         pass
            
+create_polygon = field().hexagon()
+dividepitchforteams = field().dividepitchpossession()
+dividepitchboundaries = field().dividepitchboundaries()
+drawgoalstart = field().drawgoalstart()
+
+
+print(create_polygon)
+print(dividepitchforteams)
+print(dividepitchboundaries)
+print(drawgoalstart)
 
 """Demarkate the field into red, green, blue zones"""
 """Teams start within their third of the pitch:
