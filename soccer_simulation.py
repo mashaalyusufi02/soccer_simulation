@@ -1,8 +1,12 @@
 import math
 import random
 import matplotlib.pyplot as plt
-from mplsoccer.pitch import Pitch
+import matplotlib.patches as patches
+from matplotlib.patches import Polygon
+import numpy as np
 import os
+import seaborn as sns
+import matplotlib.patheffects as PathEffects
 """
 Each team must consist of a minimum of 3 players and a maximum of 5 players
 create a dictionary where each players team is assigned to them
@@ -49,18 +53,47 @@ print("blue Team:",blue_team)
 print("green team:",green_team)
 print("red team:",red_team)
 
+
 class field(Players):
     """Define boundaries of the field"""
     def __init__(self):
         self.diameter = 40
-        self.centretobaseline = (self.diameter)//2
-        self.centretocorner = 23
+        self.centretocorner = (self.diameter)//2
+        self.sidelength = 23
+        self.numsides = 6
         self.goalheight = 2
         self.goalwidth = 3
-        self.distancefromgoaltocentre = 20
-    """Define goal scoring riles of the field"""
+        self.centre = [0,0]
+
+    def hexagon(self):
+        """"Compute all angles in radians because math.cos() and math.sin() return radians"""
+        #convert 60 degrees to radians
+        angle = (360 / self.numsides) * (math.pi / 180)
+        #polygoncoordinates stores the cartesian coordinates of the hexagon
+        polygoncoordinates = []
+        for i in range(0,self.sidelength):
+            x = polygoncoordinates[0] + self.sidelength * math.cos(angle*i)
+            y = polygoncoordinates[1] + self.sidelength * math.sin(angle*i)
+            polygoncoordinates.append((x,y))
+        return polygoncoordinates
+    
+
+    def dividepitch(self):
+        coordinates = self.hexagon()
+        return {"red_team" : [self.centre, coordinates[0],coordinates[1],coordinates[2]],
+         "blue_team" : [self.centre, coordinates[3],coordinates[4],coordinates[5]],
+         "green_team" : [self.centre, coordinates[7],coordinates[8],coordinates[9]]}
+        #plt.hexbin()
+        #[[-11.5,-20],[-11.5,20],[11.5,-20],[11.5,20],[23,0],]
+
+    """Return the rectangle that is the goal"""
+    def goal(self):
+        goalarea = self.goalheight * self.goalwidth 
+        return goalarea
+    
     def goalscoring(self):
         pass
+    
     """Define possession for all 3 teams"""    
     def possession(self):
         pass
