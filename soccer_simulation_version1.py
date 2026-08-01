@@ -241,6 +241,7 @@ class Team():
         self.leading_team_goals = self.concessions[self.leading_team]
         self.team_betrayal_threshold = {"red": random.uniform(0,1),"green": random.uniform(0,1),"blue": random.uniform(0,1)}
         self.current_tick = 0
+        self.team_pressure_probability = random.uniform(0.1,1)
         
 
     """Spawn players on the field within their area boundaries. Refer to divide self.pitchforteams dict"""
@@ -290,9 +291,10 @@ class Team():
         return [team_name, passer, receiver, self.ball_coordinates]
 
         
-    """ball passed between teammates based on who is closest from own team and team with median concessions"""
+    """ball passed between teammates based on who is closest from own team"""
     def passing(self):
-        (team_name, player_name), _ = self.possession()
+        (team_name, player_name), distance = self.possession()
+
 
         team_players = self.teams_dict[team_name]
 
@@ -323,7 +325,7 @@ class Team():
             "ball_coordinates": self.ball_coordinates}
 
     """ball passed towards the ally goal this can be the team with the median amount of goals or a team with less goals"""
-    def betrayal_pass(self):
+    def ally_pass(self):
         team_name, passer, receiver, coords = self.kickoff()
         sorted_teams = sorted(self.concessions.items(), key=lambda x: x[1])
         ally_team = sorted_teams[1][0]   # middle team
@@ -423,7 +425,7 @@ class Team():
 
     # 2. Identify who last touched the ball
         (last_team, last_player), _ = self.possession()
-        last_team = last_team.split("_")[0]  # normalize "red_team" → "red"
+        last_team = last_team.split("_")[0]  # for example turn"red_team" to "red"
 
     # 3. Decide who gets the throw-in
         if last_team == boundary_team:
@@ -480,7 +482,7 @@ class Team():
     def goalkick_or_corner_kick(self):
     # 1. Who last touched the ball?
         (last_team, last_player), _ = self.possession()
-        last_team = last_team.split("_")[0]   # normalize "red_team" → "red"
+        last_team = last_team.split("_")[0]   # for example turn red team to red
 
         ball_x, ball_y = self.ball_coordinates
 
@@ -576,7 +578,164 @@ class Team():
             "last_touch_team": last_team
         }
 
+    """Teams collaborate against the winning team"""
+    def determine_alliance(self):
+        #teams sorted by values of concessions dictionary. Winning team has the fewest concessions
+        sorted_teams = sorted(self.concessions.items(), key=lambda x: x[1])
+        winning_team = sorted_teams[0][0] #returns (team_name, concessions) as tuple
+        alliance_teams_med_concessions = sorted_teams[1][0]
+        alliance_team_lowest_concessions = sorted_teams[2][0]
+        return winning_team, alliance_teams_med_concessions, alliance_team_lowest_concessions
 
+    """compute distance between closest teammate versus closest player from ally team and make a pass based on the minimum distance"""
+    def compute_pass_distances(self,team_name,player_name,alliance_teams_med_concessions,alliance_team_lowest_concessions):
+            px, py = self.teams_dict[team_name][player_name]["xcor"], self.teams_dict[team_name][player_name]["ycor"]
+
+            # --- Teammates ---
+            teammate_distances = {}
+            for other_player, attrs in self.teams_dict[team_name].items():
+                if other_player != player_name:
+                    dist = math.dist((px, py), (attrs["xcor"], attrs["ycor"]))
+                    teammate_distances[other_player] = dist
+
+            closest_teammate = min(teammate_distances, key=teammate_distances.get)
+            closest_teammate_dist = teammate_distances[closest_teammate]
+
+            #--- Allies ---
+            ally_distances = {}
+            for ally in [alliance_teams_med_concessions,alliance_team_lowest_concessions]:
+                ally_team_key = f"{ally}_team"
+                for ally_player, attrs in self.teams_dict[ally_team_key].items():
+                    dist = math.dist((px, py), (attrs["xcor"], attrs["ycor"]))
+                    ally_distances[(ally, ally_player)] = dist
+
+            closest_ally = min(ally_distances, key=ally_distances.get)
+            closest_ally_dist = ally_distances[closest_ally]
+
+            return (closest_teammate_dist, closest_teammate,closest_ally_dist, closest_ally)
+
+    def decide_pass_type(self):
+    # Who has possession?
+        (team_name, player_name), _ = self.possession()
+        team_color = team_name.split("_")[0]
+    # Determine alliances
+        winning_team, alliance_teams_med_concessions, alliance_teams_lowest_concessions = self.determine_alliance()
+    # If possessing team is the winning team, pass within own team
+        if team_color == winning_team:
+            return self.passing()
+    # Compute distances — unpack matches compute_pass_distances return order:
+    # (closest_teammate_dist, closest_teammate, closest_ally_dist, closest_ally)
+        (closest_teammate_dist, closest_teammate,closest_ally_dist, closest_ally) = self.compute_pass_distances(team_name, player_name,alliance_teams_med_concessions,alliance_teams_lowest_concessions)
+    # If teammate is closer, do a normal pass; otherwise make a strategic ally pass
+        if closest_teammate_dist < closest_ally_dist:
+            return self.passing()
+        else:
+            return self.ally_pass()
+    
+        
+    """Team Pressure by players own team not to score against ally team. Function returns betrayal probability or pressure factor depending on which is greater"""
+    def apply_team_pressure(self,player_team,player_name):
+        winning_team, ally1, ally2 = self.determine_alliance() #('red','blue','green')
+        player_team = player_team.split("_")[0]
+        # If team is NOT collaborating then no pressure applied
+        if player_team == winning_team:
+            return self.teams_dict[f"{player_team}_team"][player_name]["betrayal_probability"]
+    
+        # Pressure factor: teams with more concessions apply more pressure
+        concessions = self.concessions[player_team]
+        pressure_factor = self.team_pressure_probability  
+        current_prob = self.teams_dict[f"{player_team}_team"][player_name]["betrayal_probability"]
+        new_prob = max(current_prob,pressure_factor)
+    
+        # Update player probability
+        self.teams_dict[f"{player_team}_team"][player_name]["betrayal_probability"] = new_prob
+    
+        return new_prob
+    
+
+    """Evaluate if betrayal should occur based on distance between player and winning team goal vs player and ally goal. 
+    If this function returns True, then one of the teams betrays its ally. If it returns False, then no betrayal happens"""
+    def evaluate_betrayal(self, player_team, player_name):
+        player_team = player_team.split("_")[0]
+        winning_team, ally1, ally2 = self.determine_alliance()
+
+        if player_team == winning_team:
+            return False
+
+        ally_team = ally1 if ally2 == player_team else ally2
+
+        px = self.teams_dict[f"{player_team}_team"][player_name]["xcor"]
+        py = self.teams_dict[f"{player_team}_team"][player_name]["ycor"]
+
+    
+        ally_goal_rect = self.drawgoalstart[f"{ally_team}_team_goal_coords"]
+        enemy_goal_rect = self.drawgoalstart[f"{winning_team}_team_goal_coords"]
+
+        ally_goal_mid = ((ally_goal_rect[0][0] + ally_goal_rect[3][0]) / 2,(ally_goal_rect[0][1] + ally_goal_rect[3][1]) / 2)
+
+        enemy_goal_mid = (
+        (enemy_goal_rect[0][0] + enemy_goal_rect[3][0]) / 2,
+        (enemy_goal_rect[0][1] + enemy_goal_rect[3][1]) / 2)
+
+        dist_to_ally_goal = math.dist((px, py), ally_goal_mid)
+        dist_to_enemy_goal = math.dist((px, py), enemy_goal_mid)
+
+        betrayal_prob = self.apply_team_pressure(player_team, player_name)
+
+        if dist_to_ally_goal < dist_to_enemy_goal and betrayal_prob > self.team_betrayal_threshold[player_team]:
+            return True
+        return False
+
+
+    """Betrayal action"""
+    def perform_betrayal(self,player_team,player_name):
+        player_team = player_team.split("_")[0] #returns red, blue, or green
+        winning_team, ally1, ally2 = self.determine_alliance() #('red','blue','green')
+        ally_team = ally1 if ally2 == player_team else ally2
+
+        # Player coordinates
+        px = self.teams_dict[f"{player_team}_team"][player_name]["xcor"]
+        py = self.teams_dict[f"{player_team}_team"][player_name]["ycor"]
+
+        #winning team goal midpoint
+        enemy_goal_rect = self.drawgoalstart[f"{winning_team}_team_goal_coords"]
+        enemy_goal_mid = ((enemy_goal_rect[0][0] + enemy_goal_rect[3][0]) / 2,
+                             (enemy_goal_rect[0][1] + enemy_goal_rect[3][1]) / 2)
+        # Ally goal midpoint
+        ally_goal_rect = self.drawgoalstart[f"{ally_team}_team_goal_coords"]
+        ally_goal_mid = ((ally_goal_rect[0][0] + ally_goal_rect[3][0]) / 2,
+                     (ally_goal_rect[0][1] + ally_goal_rect[3][1]) / 2)
+
+        # Distance to ally goal and enemy goal
+        dist_to_ally_goal = math.dist((px, py), ally_goal_mid)
+        dist_to_enemy_goal = math.dist((px, py), enemy_goal_mid)
+
+        # If close enough shoot at ally goal
+        if dist_to_ally_goal > dist_to_enemy_goal:  # threshold can be tuned
+            self.ball_coordinates = [ally_goal_mid[0], ally_goal_mid[1]]
+            self.teams_dict[f"{player_team}_team"][player_name]["unsuccessfulshots"] += 1
+            return {
+            "betrayal": "shot_at_ally_goal",
+            "player": player_name,
+            "target_team": ally_team,
+            "ball_coordinates": self.ball_coordinates}
+
+        # Otherwise pass to winning team
+        receivers_team = self.teams_dict[f"{winning_team}_team"]
+        receiver = random.choice(list(receivers_team.keys()))
+        rx = receivers_team[receiver]["xcor"]
+        ry = receivers_team[receiver]["ycor"]
+
+        self.ball_coordinates = [rx, ry]
+
+        return {
+        "betrayal": "pass_to_enemy_team",
+        "player": player_name,
+        "receiver": receiver,
+        "receiver_team": winning_team,
+        "ball_coordinates": self.ball_coordinates}
+
+ 
 
 
 
@@ -586,22 +745,37 @@ team_pos = game.spawn_player_before_kickoff()
 print(team_pos)
 
 possession = game.possession()
-print(possession)
+print(possession) #(('red_team', 'Player_1'), 0.0)
 
 kick = game.kickoff()
-print(kick)
+print(kick) #['blue_team', 'Player_2', 'Player_3', [11.5, -19.92]]
 
 general_passing = game.passing()
-print(general_passing)
+print(general_passing) #{'team': 'blue_team', 'passer': 'Player_3', 'receiver': 'Player_1', 'ball_coordinates': [-11.5, 0.0]}
 
-betrayal = game.betrayal_pass()
-print(betrayal)
+ally = game.ally_pass()
+print(ally) #{'new_ball_coordinates': [0, -19.92], 'receiver_player': 'Player_2', 'receiver_team': 'blue'}
 
 goal = game.goal()
-print(goal)
+print(goal) #{'goal_scored': False, 'ball_coordinates': [0, -19.92]}
 
-throwin = game.throwin_restart()
+throwin = game.throwin_restart() #{'throwin': False, 'reason': 'Ball still inside field'}
 print(throwin)
 
 goalkick_and_cornerkick = game.goalkick_or_corner_kick()
-print(goalkick_and_cornerkick)
+print(goalkick_and_cornerkick) #{'restart': 'goal_kick', 'team_awarded': 'red', 'kick_location': [16.712994202662276, 9.721805232011901], 'last_touch_team': 'blue'}
+
+alliances = game.determine_alliance()
+print(alliances)
+ #('red', 'blue', 'green')
+alliance = game.decide_pass_type()
+print(alliance) #{'team': 'red_team', 'passer': 'Player_3', 'receiver': 'Player_2', 'ball_coordinates': [11.5, 19.92]}
+
+betrayal_evaluation = game.evaluate_betrayal(possession[0][0], possession[0][1])
+print(betrayal_evaluation)
+
+team_pressure = game.apply_team_pressure(possession[0][0], possession[0][1])
+print(team_pressure)
+
+betrayal_action = game.perform_betrayal(possession[0][0], possession[0][1])
+print(betrayal_action)
