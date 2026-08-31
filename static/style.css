@@ -1,0 +1,274 @@
+/* General UI Theme Setup */
+body {
+    background-color: #f4f4ec;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    margin: 0;
+    padding: 20px;
+    color: #000;
+}
+
+
+.dashboard-container {
+    max-width: 800px;
+    background-color: #cad2c5;
+    padding: 15px;
+    border: 1px solid #a3b19b;
+    border-radius: 4px;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+}
+
+.row {
+    margin-bottom: 12px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Control Elements & Text Inputs */
+.control-box {
+    background-color: #84a59d;
+    border: 1px solid #6b8c85;
+    padding: 3px 8px;
+    display: inline-flex;
+    justify-content: space-between;
+    width: 800px;
+    color: white;
+}
+
+.buttons-row {
+    margin-bottom: 15px;
+}
+
+.btn {
+    border: 1px solid #777;
+    padding: 6px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: inset -1px -1px 2px rgba(0,0,0,0.2);
+}
+
+.setup-btn {
+    background-color: #d1cfe2;
+}
+
+.go-btn {
+    background-color: #000;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Settings Column Framework */
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.section-title {
+    font-size: 13px;
+    margin: 0 0 5px 0;
+    font-weight: normal;
+}
+
+.slider-container {
+    background-color: #84a59d;
+    border: 1px solid #6b8c85;
+    padding: 3px 6px;
+    margin-bottom: 4px;
+    color: white;
+    font-size: 11px;
+}
+
+.slider-label {
+    display: block;
+    margin-bottom: 2px;
+}
+
+input[type="range"] {
+    width: 100%;
+    margin: 2px 0;
+}
+
+.slider-value {
+    display: block;
+    text-align: right;
+}
+
+/* Toggle Switch Styling */
+.toggle-row {
+    justify-content: center;
+    margin-top: 5px;
+}
+
+.toggle-container {
+    background-color: #84a59d;
+    border: 1px solid #6b8c85;
+    display: flex;
+    align-items: center;
+    padding: 3px 8px;
+    gap: 8px;
+}
+
+.toggle-switch {
+    background-color: #eee;
+    border: 1px solid #777;
+    display: flex;
+    font-size: 11px;
+    cursor: pointer;
+    color: #333;
+}
+
+.toggle-switch span {
+    padding: 2px 5px;
+}
+
+.toggle-switch .active {
+    background-color: #000;
+    color: #fff;
+}
+
+/* Info Box / Counters Elements */
+.counters-row {
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.counter-box {
+    background-color: #e5e5dc;
+    border: 1px solid #b5b5ac;
+    width: 70px;
+    padding: 4px;
+}
+
+.counter-label {
+    display: block;
+    font-size: 11px;
+    margin-bottom: 3px;
+}
+
+.counter-value {
+    background-color: #fff;
+    border: 1px solid #b5b5ac;
+    padding: 2px 4px;
+    text-align: left;
+}
+
+.muted {
+    color: #777;
+}
+
+/* Graph System Layout */
+.graph-panel {
+    width: 100%;
+    box-sizing: border-box;
+    background-color: #e8e8d8;
+    border: 1px solid #b5b5ac;
+    padding: 2px;
+    margin-top: 15px;
+}
+
+.graph-title {
+    text-align: center;
+    margin: 0 0 8px 0;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.graph-body {
+    display: flex;
+    position: relative;
+}
+
+/* Graph Y-Axis Styling */
+.y-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-right: 6px;
+    width: 40px;
+    font-size: 11px;
+}
+
+.axis-title-y {
+    transform: rotate(-90deg);
+    white-space: nowrap;
+    margin: 2px 0;
+}
+
+/* Plot Area Box */
+.graph-canvas {
+    flex-grow: 1;
+    height: 200px;
+    background-color: #fff;
+    border-left: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+
+/* Graph X-Axis Styling */
+.x-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 4px; /* Aligns perfectly with the canvas boundary */
+    padding-top: 4px;
+    font-size: 11px;
+}
+
+.axis-title-x {
+    font-weight: normal;
+}
+
+/* Legend Styling Details */
+.legend {
+    width: 85px;
+    padding-left: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 11px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.color-box {
+    width: 12px;
+    height: 12px;
+    border: 1px solid #555;
+    display: inline-block;
+}
+
+
+.red-color { background-color: #e63946; }
+.blue-color { background-color: #457b9d; }
+.green-color { background-color: #2a9d8f; }
+
+#simulation-container {
+    border: 2px solid #333;
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+#gameCanvas {
+    background-color: #f0f0f0;
+}
+
+.field-legend {
+    flex-direction: row;
+    justify-content: center;
+    width: auto;
+    padding: 6px 0 0 0;
+    gap: 16px;
+}
+
+#event-log {
+    margin-top: 10px;
+    font-size: 12px;
+}
