@@ -18,7 +18,7 @@ pip install flask
 python app.py
 ```
  
-Then open <http://127.0.0.1:5000> in your browser and:
+Then open http://127.0.0.1:5000 in your browser and:
  
 1. Adjust the sliders to change from 3 players to 5 players (optional) for each team.
 2. Adjust the betrayal probability sliders that represent the probability of each team betraying the alliance.
@@ -38,22 +38,9 @@ soccer_app/
     └── style.css        Styling
 ```
  
-Flask requires the folders to be named exactly `templates` and `static`.
  
-## How it works
  
-The browser runs the game loop. Each frame, `simulation.js` sends `POST /step`, the engine advances one tick, and the server returns the full state as JSON. The page then redraws the pitch, players, ball, counters and event log.
- 
-| Route | Method | Purpose |
-| --- | --- | --- |
-| `/` | GET | Serves the page |
-| `/state` | GET | Current state without advancing the match |
-| `/setup` | POST | Rebuilds the match from the slider values |
-| `/step` | POST | Advances one tick and returns the new state |
- 
-The server keeps one match in memory, protected by a lock, so it is a single-user tool.
- 
-## Controls
+## Sliders for users
  
 | Slider | Range | Meaning |
 | --- | --- | --- |
@@ -81,25 +68,11 @@ After a goal, the conceding team kicks off from the centre.
  
 **Alliance and betrayal.** The team with the fewest concessions is the leader. The other two teams attack the leader and may pass to each other. A non-leading player who is closer to their ally's goal than the leader's goal, and whose betrayal probability beats their team's threshold, shoots at the ally's goal instead.
  
-**Not modelled yet.** Rotation of teams after each third, match timing and extra time, fouls and free kicks, penalties, substitutes, and a designated goalkeeper (saves are a probability).
- 
-## Tuning the behaviour
- 
-The constants at the top of `soccer_engine.py` control how the match feels:
- 
-| Constant | Effect |
-| --- | --- |
-| `SHOOT_RANGE`, `SHOOT_PROB` | How close a player must be to shoot and how often they do |
-| `SAVE_PROB` | Chance an on-target shot is saved |
-| `PASS_PROB`, `LONG_PASS_PROB` | How often players pass instead of dribbling, and how often they pass long |
-| `TACKLE_PROB`, `INTERCEPT_PROB` | How often possession changes hands |
-| `CLEARANCE_PROB`, `DEFLECT_PROB` | How often defenders clear the ball or deflect it out (more corners and throw-ins) |
- 
 ## Code overview
  
 `soccer_engine.py` has three classes:
  
-- **`Field`**: the hexagon, goals, thirds, owned sides, and helper geometry. Hexagon sides are numbered 0 to 5, where side `i` runs from corner `c[i]` to `c[i+1]`.
+- **`Field`**: the hexagon, goals, thirds, owned sides, and helper geometry functions.
 - **`Player`**: builds each team's players, with random speed and betrayal probability.
 - **`Team`**: the match itself. `step()` advances one tick, `get_state()` converts the match to JSON, and the out-of-play and goal logic lives in `_resolve_crossing()`.
 Coordinates inside the engine are in metres with y pointing up. `get_state()` converts them to canvas pixels (400 x 400 canvas, 7.5 pixels per metre).
