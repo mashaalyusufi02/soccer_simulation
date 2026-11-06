@@ -4,6 +4,9 @@ An agent-based simulation of **3-sided football** (Australian version) with a Fl
  
 The pitch, goals, thirds and restart rules follow *3-sided football, Principles of play (Australian version)*.
 
+The image below represents a snapshot of how the game runs
+
+![App overview](./soccer_app_snapshot.png)
 
 
 ## Quick start
